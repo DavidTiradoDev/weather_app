@@ -152,9 +152,45 @@ class FavoritesNotifier extends _$FavoritesNotifier {
   }
 }
 
-// Provider mejorado para verificar si un evento es favorito
+// Reemplaza COMPLETAMENTE los providers al final de tu favorites_provider.dart
+
+// Provider que mantiene un Set de IDs de favoritos con tipo explícito
 @riverpod
-Future<bool> isEventFavorite(ref, String eventId) async {
-  final favoritesNotifier = ref.read(favoritesNotifierProvider.notifier);
-  return await favoritesNotifier.isFavorite(eventId);
+Set<String> favoriteEventIds(ref) {
+  final favoritesState = ref.watch(favoritesNotifierProvider);
+
+  // Crear un Set<String> explícitamente tipado
+  final Set<String> favoriteIds = <String>{};
+
+  for (final event in favoritesState.favoriteEvents) {
+    // Convertir a String de manera segura
+    final String eventId = event.id.toString();
+    if (eventId.isNotEmpty) {
+      favoriteIds.add(eventId);
+    }
+  }
+
+  return favoriteIds;
+}
+
+@riverpod
+bool isEventFavorite(ref, String eventId) {
+  try {
+    final Set<String> favoriteIds = ref.watch(favoriteEventIdsProvider);
+    return favoriteIds.contains(eventId);
+  } catch (e) {
+    // En caso de error, asumir que no es favorito
+    return false;
+  }
+}
+
+// ALTERNATIVA: Si prefieres mantener el comportamiento async original
+@riverpod
+Future<bool> isEventFavoriteAsync(ref, String eventId) async {
+  try {
+    final favoritesNotifier = ref.read(favoritesNotifierProvider.notifier);
+    return await favoritesNotifier.isFavorite(eventId);
+  } catch (e) {
+    return false;
+  }
 }

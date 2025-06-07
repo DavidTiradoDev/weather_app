@@ -6,7 +6,24 @@ part of 'favorites_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$isEventFavoriteHash() => r'04203da22ae6429c558547f4186fb505ff2094e5';
+String _$favoriteEventIdsHash() => r'e17b0673da7f227999f6c00714f722cf49693f19';
+
+/// See also [favoriteEventIds].
+@ProviderFor(favoriteEventIds)
+final favoriteEventIdsProvider = AutoDisposeProvider<Set<String>>.internal(
+  favoriteEventIds,
+  name: r'favoriteEventIdsProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$favoriteEventIdsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef FavoriteEventIdsRef = AutoDisposeProviderRef<Set<String>>;
+String _$isEventFavoriteHash() => r'd4bb7c792ed70c37727d1cdb6e78525eeea58db4';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -34,7 +51,7 @@ class _SystemHash {
 const isEventFavoriteProvider = IsEventFavoriteFamily();
 
 /// See also [isEventFavorite].
-class IsEventFavoriteFamily extends Family<AsyncValue<bool>> {
+class IsEventFavoriteFamily extends Family<bool> {
   /// See also [isEventFavorite].
   const IsEventFavoriteFamily();
 
@@ -72,7 +89,7 @@ class IsEventFavoriteFamily extends Family<AsyncValue<bool>> {
 }
 
 /// See also [isEventFavorite].
-class IsEventFavoriteProvider extends AutoDisposeFutureProvider<bool> {
+class IsEventFavoriteProvider extends AutoDisposeProvider<bool> {
   /// See also [isEventFavorite].
   IsEventFavoriteProvider(
     String eventId,
@@ -107,7 +124,7 @@ class IsEventFavoriteProvider extends AutoDisposeFutureProvider<bool> {
 
   @override
   Override overrideWith(
-    FutureOr<bool> Function(IsEventFavoriteRef provider) create,
+    bool Function(IsEventFavoriteRef provider) create,
   ) {
     return ProviderOverride(
       origin: this,
@@ -124,7 +141,7 @@ class IsEventFavoriteProvider extends AutoDisposeFutureProvider<bool> {
   }
 
   @override
-  AutoDisposeFutureProviderElement<bool> createElement() {
+  AutoDisposeProviderElement<bool> createElement() {
     return _IsEventFavoriteProviderElement(this);
   }
 
@@ -144,17 +161,149 @@ class IsEventFavoriteProvider extends AutoDisposeFutureProvider<bool> {
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin IsEventFavoriteRef on AutoDisposeFutureProviderRef<bool> {
+mixin IsEventFavoriteRef on AutoDisposeProviderRef<bool> {
   /// The parameter `eventId` of this provider.
   String get eventId;
 }
 
-class _IsEventFavoriteProviderElement
-    extends AutoDisposeFutureProviderElement<bool> with IsEventFavoriteRef {
+class _IsEventFavoriteProviderElement extends AutoDisposeProviderElement<bool>
+    with IsEventFavoriteRef {
   _IsEventFavoriteProviderElement(super.provider);
 
   @override
   String get eventId => (origin as IsEventFavoriteProvider).eventId;
+}
+
+String _$isEventFavoriteAsyncHash() =>
+    r'e96da5ecf678009d21e14382e3db377875e14a4e';
+
+/// See also [isEventFavoriteAsync].
+@ProviderFor(isEventFavoriteAsync)
+const isEventFavoriteAsyncProvider = IsEventFavoriteAsyncFamily();
+
+/// See also [isEventFavoriteAsync].
+class IsEventFavoriteAsyncFamily extends Family<AsyncValue<bool>> {
+  /// See also [isEventFavoriteAsync].
+  const IsEventFavoriteAsyncFamily();
+
+  /// See also [isEventFavoriteAsync].
+  IsEventFavoriteAsyncProvider call(
+    String eventId,
+  ) {
+    return IsEventFavoriteAsyncProvider(
+      eventId,
+    );
+  }
+
+  @override
+  IsEventFavoriteAsyncProvider getProviderOverride(
+    covariant IsEventFavoriteAsyncProvider provider,
+  ) {
+    return call(
+      provider.eventId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'isEventFavoriteAsyncProvider';
+}
+
+/// See also [isEventFavoriteAsync].
+class IsEventFavoriteAsyncProvider extends AutoDisposeFutureProvider<bool> {
+  /// See also [isEventFavoriteAsync].
+  IsEventFavoriteAsyncProvider(
+    String eventId,
+  ) : this._internal(
+          (ref) => isEventFavoriteAsync(
+            ref as IsEventFavoriteAsyncRef,
+            eventId,
+          ),
+          from: isEventFavoriteAsyncProvider,
+          name: r'isEventFavoriteAsyncProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$isEventFavoriteAsyncHash,
+          dependencies: IsEventFavoriteAsyncFamily._dependencies,
+          allTransitiveDependencies:
+              IsEventFavoriteAsyncFamily._allTransitiveDependencies,
+          eventId: eventId,
+        );
+
+  IsEventFavoriteAsyncProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.eventId,
+  }) : super.internal();
+
+  final String eventId;
+
+  @override
+  Override overrideWith(
+    FutureOr<bool> Function(IsEventFavoriteAsyncRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: IsEventFavoriteAsyncProvider._internal(
+        (ref) => create(ref as IsEventFavoriteAsyncRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        eventId: eventId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<bool> createElement() {
+    return _IsEventFavoriteAsyncProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IsEventFavoriteAsyncProvider && other.eventId == eventId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, eventId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin IsEventFavoriteAsyncRef on AutoDisposeFutureProviderRef<bool> {
+  /// The parameter `eventId` of this provider.
+  String get eventId;
+}
+
+class _IsEventFavoriteAsyncProviderElement
+    extends AutoDisposeFutureProviderElement<bool>
+    with IsEventFavoriteAsyncRef {
+  _IsEventFavoriteAsyncProviderElement(super.provider);
+
+  @override
+  String get eventId => (origin as IsEventFavoriteAsyncProvider).eventId;
 }
 
 String _$favoritesNotifierHash() => r'5983d3a49cafff669ea7b5132615b331a2843278';

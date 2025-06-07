@@ -63,7 +63,6 @@ class WeatherEventsCard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
 
-            // Show first 2 events
             ...events
                 .take(2)
                 .map((event) => _buildEventItem(context, ref, event)),
@@ -78,8 +77,14 @@ class WeatherEventsCard extends ConsumerWidget {
     WidgetRef ref,
     WeatherEvent event,
   ) {
-    // Usar AsyncValue para manejar el provider asíncrono
-    final isFavoriteAsync = ref.watch(isEventFavoriteProvider(event.id));
+    // 🔥 CAMBIO: Manejo seguro de errores
+    bool isFavorite = false;
+    try {
+      isFavorite = ref.watch(isEventFavoriteProvider(event.id));
+    } catch (e) {
+      // En caso de error, asumir que no es favorito
+      isFavorite = false;
+    }
 
     return InkWell(
       onTap: () {
@@ -139,25 +144,11 @@ class WeatherEventsCard extends ConsumerWidget {
                         .read(favoritesNotifierProvider.notifier)
                         .toggleFavorite(event);
                   },
-                  child: isFavoriteAsync.when(
-                    data:
-                        (isFavorite) => Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          size: 16,
-                          color: isFavorite ? Colors.red : Colors.grey,
-                        ),
-                    loading:
-                        () => const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                    error:
-                        (error, stack) => const Icon(
-                          Icons.favorite_border,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
+                  // 🔥 CAMBIO CLAVE: Ya no usamos .when() porque no es Future
+                  child: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    size: 16,
+                    color: isFavorite ? Colors.red : Colors.grey,
                   ),
                 ),
               ],
