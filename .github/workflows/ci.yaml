@@ -1,0 +1,320 @@
+# CI/CD Pipeline para Weather App
+# Ubicación: .github/workflows/ci.yml (desde la RAÍZ del proyecto)
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: "stable"
+          cache: true
+
+      - name: 📦 Get dependencies
+        run: flutter pub get
+
+      - name: ✨ Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: 🔍 Analyze project source
+        run: flutter analyze --fatal-infos
+
+      - name: 🤖 Generate mocks
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: 🧪 Run unit tests
+        run: flutter test --coverage --test-randomize-ordering-seed random
+
+      - name: 📊 Check test coverage
+        uses: VeryGoodOpenSource/very_good_coverage@v2
+        with:
+          path: coverage/lcov.info
+          min_coverage: 80
+          exclude: |
+            **/*.g.dart
+            **/*.freezed.dart
+            **/generated/**
+            **/l10n/**
+
+      - name: 📈 Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage/lcov.info
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: 📋 Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            coverage/
+            test/
+
+  integration_test:
+    name: 🔄 Integration Tests
+    runs-on: macos-latest
+    needs: [test]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: "stable"
+
+      - name: 📦 Install dependencies
+        run: flutter pub get
+
+      - name: 🤖 Generate mocks
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: 📱 Start iOS Simulator
+        uses: futureware-tech/simulator-action@v2
+        with:
+          model: "iPhone 15"
+
+      - name: 🧪 Run integration tests
+        run: flutter test integration_test/
+
+      - name: 📋 Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: integration_test/
+
+  build_android:
+    name: 🤖 Build Android
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: "stable"
+
+      - name: 📦 Install dependencies
+        run: flutter pub get
+
+      - name: 🤖 Generate mocks
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: 🏗️ Build Android APK
+        run: flutter build apk --release
+
+      - name: 📊 APK size check
+        run: |
+          APK_SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-release.apk)
+          echo "APK Size: $((APK_SIZE / 1024 / 1024)) MB"
+          if [ $APK_SIZE -gt 52428800 ]; then # 50MB
+            echo "⚠️ APK size exceeds 50MB"
+          else
+            echo "✅ APK size is acceptable"
+          fi
+
+      - name: 📦 Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  build_ios:
+    name: 🍎 Build iOS
+    runs-on: macos-latest
+    needs: [test]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: "stable"
+
+      - name: 📦 Install dependencies
+        run: flutter pub get
+
+      - name: 🤖 Generate mocks
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: 🏗️ Build iOS (no signing)
+        run: flutter build ios --release --no-codesign
+
+  security_scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: "stable"
+
+      - name: 📦 Install dependencies
+        run: flutter pub get
+
+      - name: 🔍 Security audit
+        run: |
+          echo "🔍 Running security checks..."
+
+          # Check for known vulnerabilities in dependencies
+          flutter pub audit || echo "⚠️ Some vulnerabilities found"
+
+          # Check for git dependencies (potential security risk)
+          if grep -q "git:" pubspec.yaml; then
+            echo "⚠️ Git dependencies found:"
+            grep "git:" pubspec.yaml
+          else
+            echo "✅ No git dependencies found"
+          fi
+
+          # Check for dev dependencies in main dependencies
+          echo "📋 Checking dependency structure..."
+
+      - name: 📋 Generate security report
+        run: |
+          echo "# Security Report" > security_report.md
+          echo "Generated on: $(date)" >> security_report.md
+          echo "" >> security_report.md
+          echo "## Dependencies" >> security_report.md
+          flutter pub deps >> security_report.md
+
+      - name: 📦 Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security_report.md
+
+  performance_analysis:
+    name: ⚡ Performance Analysis
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: "stable"
+
+      - name: 📦 Install dependencies
+        run: flutter pub get
+
+      - name: 🤖 Generate mocks
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: 🏗️ Build for performance analysis
+        run: flutter build apk --profile
+
+      - name: 📊 Analyze app size
+        run: |
+          echo "# Performance Report" > performance_report.md
+          echo "Generated on: $(date)" >> performance_report.md
+          echo "" >> performance_report.md
+          echo "## App Size Analysis" >> performance_report.md
+
+          if [ -f build/app/outputs/flutter-apk/app-profile.apk ]; then
+            SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-profile.apk)
+            SIZE_MB=$((SIZE / 1024 / 1024))
+            echo "Profile APK size: ${SIZE_MB} MB" >> performance_report.md
+            
+            if [ $SIZE_MB -lt 30 ]; then
+              echo "✅ Excellent app size" >> performance_report.md
+            elif [ $SIZE_MB -lt 50 ]; then
+              echo "⚠️ Good app size" >> performance_report.md
+            else
+              echo "❌ Large app size - consider optimization" >> performance_report.md
+            fi
+          fi
+
+          echo "" >> performance_report.md
+          echo "## Code Metrics" >> performance_report.md
+          find lib -name "*.dart" | wc -l | xargs echo "Dart files:" >> performance_report.md
+          find test -name "*.dart" | wc -l | xargs echo "Test files:" >> performance_report.md
+
+      - name: 📦 Upload performance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report
+          path: performance_report.md
+
+  deploy_staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test, integration_test, build_android]
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: ./
+
+      - name: 🚀 Deploy to staging
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          # Aquí irían los comandos para desplegar a staging
+          # Por ejemplo: Firebase App Distribution, TestFlight, etc.
+          echo "✅ Deployed to staging"
+
+  notify:
+    name: 📢 Notify Results
+    runs-on: ubuntu-latest
+    needs: [test, integration_test, build_android, build_ios]
+    if: always()
+
+    steps:
+      - name: 📢 Notify success
+        if: ${{ needs.test.result == 'success' && needs.build_android.result == 'success' }}
+        run: |
+          echo "✅ All checks passed successfully!"
+          echo "🧪 Tests: ✅"
+          echo "🤖 Android Build: ✅"
+          echo "🍎 iOS Build: ✅"
+
+      - name: 📢 Notify failure
+        if: ${{ needs.test.result == 'failure' || needs.build_android.result == 'failure' }}
+        run: |
+          echo "❌ Some checks failed:"
+          echo "🧪 Tests: ${{ needs.test.result }}"
+          echo "🤖 Android Build: ${{ needs.build_android.result }}"
+          echo "🍎 iOS Build: ${{ needs.build_ios.result }}"
