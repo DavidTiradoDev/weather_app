@@ -5,7 +5,7 @@ class AppConfig {
   // API Configuration
   static const String baseUrl =
       'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services';
-  static const String apiKey = 'YOUR_API_KEY'; // Reemplaza con tu API key
+  static const String apiKey = 'CMK6VVPKGM2XQX3SHUJ9NSBDJ';
 
   // Flavor Configuration
   static const String flavor = String.fromEnvironment(
